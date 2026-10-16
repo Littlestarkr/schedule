@@ -289,6 +289,67 @@
     margin-top: 8px;
   }
 
+
+  /* 로그인 / 상단 바 */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .topbar h1 { margin: 0; }
+  .user-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    font-size: 12px;
+    color: var(--color-muted);
+  }
+  #user-email {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 180px;
+  }
+  #logout-btn {
+    height: 32px;
+    padding: 0 10px;
+    background: #eef0f3;
+    color: var(--color-text);
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+  .login-view {
+    text-align: center;
+    padding: 32px 16px;
+  }
+  .login-view p {
+    margin: 0 0 16px;
+    font-size: 14px;
+    color: var(--color-muted);
+  }
+  #login-btn {
+    height: 44px;
+    padding: 0 20px;
+    background: var(--color-primary);
+    color: #fff;
+    font-weight: 600;
+  }
+  #login-btn:hover { background: #1d4ed8; }
+  #login-btn:disabled { opacity: 0.6; cursor: default; }
+  .notice {
+    margin: 0 0 16px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    background: #fde8e8;
+    color: var(--color-danger);
+    word-break: break-word;
+  }
+  [hidden] { display: none !important; }
+
   @media (max-width: 420px) {
     .progress-cat-label { width: 48px; font-size: 12px; }
     .cat-label span.cat-text { display: none; }
@@ -297,58 +358,106 @@
 </head>
 <body>
 <div class="app">
-  <h1>할 일 관리</h1>
+  <div class="topbar">
+    <h1>할 일 관리</h1>
+    <div class="user-box" id="user-box" hidden>
+      <span id="user-email"></span>
+      <button type="button" id="logout-btn" aria-label="로그아웃">로그아웃</button>
+    </div>
+  </div>
 
-  <!-- 1. 진행률 영역 -->
-  <section aria-label="진행률">
-    <div class="progress-overall-label">
-      <span id="overall-progress-text">완료 0 / 전체 0 (0%)</span>
-    </div>
-    <div class="progress-bar-track">
-      <div class="progress-bar-fill" id="overall-progress-fill" style="width:0%"></div>
-    </div>
-    <div class="progress-categories" id="category-progress-list"></div>
+  <p class="notice" id="notice" role="alert" hidden></p>
+
+  <!-- 로그인 화면 -->
+  <section class="login-view" id="login-view" aria-label="로그인" hidden>
+    <p id="login-message">구글 계정으로 로그인하면 어느 기기에서든 같은 할 일 목록을 볼 수 있습니다.</p>
+    <button type="button" id="login-btn">구글로 로그인</button>
   </section>
 
-  <!-- 2. 입력 영역 -->
-  <section aria-label="할 일 입력">
-    <div class="input-row">
-      <input type="text" id="todo-input" placeholder="할 일을 입력하세요" aria-label="할 일 내용 입력">
-      <select id="category-select" aria-label="카테고리 선택">
-        <option value="work">업무</option>
-        <option value="personal">개인</option>
-        <option value="study">공부</option>
-      </select>
-      <button id="add-btn" aria-label="할 일 추가">추가</button>
-    </div>
-  </section>
+  <p class="storage-note" id="loading-note">불러오는 중...</p>
 
-  <!-- 3. 필터 영역 -->
-  <section aria-label="필터" class="filter-section">
-    <div class="tabs" id="category-tabs" role="tablist" aria-label="카테고리 필터"></div>
-    <div class="filter-row">
-      <div class="status-tabs" id="status-tabs" role="tablist" aria-label="상태 필터"></div>
-      <div class="date-toggle">
-        <button type="button" class="small-btn" id="today-toggle-btn" aria-label="오늘 항목만 보기" aria-pressed="false">오늘만</button>
-        <button type="button" id="clear-completed-btn" aria-label="완료된 항목 일괄 삭제">완료 삭제</button>
+  <div id="app-view" hidden>
+
+    <!-- 1. 진행률 영역 -->
+    <section aria-label="진행률">
+      <div class="progress-overall-label">
+        <span id="overall-progress-text">완료 0 / 전체 0 (0%)</span>
       </div>
-    </div>
-  </section>
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" id="overall-progress-fill" style="width:0%"></div>
+      </div>
+      <div class="progress-categories" id="category-progress-list"></div>
+    </section>
 
-  <!-- 4. 할 일 목록 -->
-  <section aria-label="할 일 목록">
-    <ul id="todo-list"></ul>
-  </section>
+    <!-- 2. 입력 영역 -->
+    <section aria-label="할 일 입력">
+      <div class="input-row">
+        <input type="text" id="todo-input" placeholder="할 일을 입력하세요" aria-label="할 일 내용 입력">
+        <select id="category-select" aria-label="카테고리 선택">
+          <option value="work">업무</option>
+          <option value="personal">개인</option>
+          <option value="study">공부</option>
+        </select>
+        <button id="add-btn" aria-label="할 일 추가">추가</button>
+      </div>
+    </section>
 
-  <p class="storage-note">데이터는 이 브라우저에만 저장됩니다(localStorage). 시크릿 모드나 브라우저 데이터 삭제 시 사라질 수 있습니다.</p>
+    <!-- 3. 필터 영역 -->
+    <section aria-label="필터" class="filter-section">
+      <div class="tabs" id="category-tabs" role="tablist" aria-label="카테고리 필터"></div>
+      <div class="filter-row">
+        <div class="status-tabs" id="status-tabs" role="tablist" aria-label="상태 필터"></div>
+        <div class="date-toggle">
+          <button type="button" class="small-btn" id="today-toggle-btn" aria-label="오늘 항목만 보기" aria-pressed="false">오늘만</button>
+          <button type="button" id="clear-completed-btn" aria-label="완료된 항목 일괄 삭제">완료 삭제</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. 할 일 목록 -->
+    <section aria-label="할 일 목록">
+      <ul id="todo-list"></ul>
+    </section>
+
+    <p class="storage-note">데이터는 로그인한 구글 계정에 연결되어 클라우드(Firebase)에 저장됩니다. 같은 계정으로 로그인하면 PC와 스마트폰에서 같은 목록이 보입니다.</p>
+  </div>
 </div>
 
 <script>
+  // Firebase 불러오기가 오래 걸리거나 실패하면 안내 문구를 바꿔 준다.
+  setTimeout(function () {
+    if (!window.__todoAppStarted) {
+      var note = document.getElementById('loading-note');
+      if (note) note.textContent = '불러오지 못했습니다. 인터넷 연결을 확인하고 새로고침해 주세요.';
+    }
+  }, 10000);
+</script>
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
+import {
+  getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
+import {
+  initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+  collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, writeBatch
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+
+// Firebase 웹 앱 설정값 (공개되어도 되는 값입니다. 데이터 보호는 Firestore 보안 규칙이 담당합니다)
+const firebaseConfig = {
+  apiKey: 'AIzaSyAZL3SRqo40RAElObD-VEMh4bb4TIfC6g0',
+  authDomain: 'schedule-app-62fde.firebaseapp.com',
+  projectId: 'schedule-app-62fde',
+  storageBucket: 'schedule-app-62fde.firebasestorage.app',
+  messagingSenderId: '663199047635',
+  appId: '1:663199047635:web:d349be881ad7c1d88e1926'
+};
+
 (function () {
   'use strict';
 
-  var STORAGE_KEY = 'todo-app-v1';
-  var BACKUP_KEY = 'todo-app-v1-corrupt-backup';
+  // 예전(localStorage 버전) 데이터를 계정으로 옮길 때만 사용하는 키
+  var LEGACY_KEY = 'todo-app-v1';
+  var MIGRATED_KEY_PREFIX = 'todo-app-v1-migrated-';
 
   var CATEGORIES = [
     { value: 'work', label: '업무', cls: 'badge-work' },
@@ -359,6 +468,7 @@
   CATEGORIES.forEach(function (c) { CATEGORY_MAP[c.value] = c; });
 
   var state = {
+    user: null,
     todos: [],
     categoryFilter: 'all',
     statusFilter: 'all',
@@ -366,89 +476,167 @@
     editingId: null
   };
 
-  // ---- 저장/불러오기 (F7) ----
-  function load() {
-    var raw = null;
+  var auth = null;
+  var db = null;
+  var unsubscribe = null;
+  var firstSnapshot = true;
+  var migrationChecked = false;
+
+  // ---- Firestore 경로: users/{uid}/todos/{id} ----
+  function todoRef(id) {
+    return doc(db, 'users', state.user.uid, 'todos', id);
+  }
+
+  function todosCol() {
+    return collection(db, 'users', state.user.uid, 'todos');
+  }
+
+  function normalizeTodo(id, data) {
+    return {
+      id: id,
+      text: String((data && data.text) || ''),
+      category: data && CATEGORY_MAP[data.category] ? data.category : 'work',
+      done: !!(data && data.done),
+      createdAt: (data && data.createdAt) || new Date().toISOString()
+    };
+  }
+
+  // ---- 안내/오류 메시지 ----
+  var noticeTimer = null;
+
+  function showNotice(msg) {
+    el.notice.textContent = msg;
+    el.notice.hidden = false;
+    clearTimeout(noticeTimer);
+    noticeTimer = setTimeout(clearNotice, 10000);
+  }
+
+  function clearNotice() {
+    clearTimeout(noticeTimer);
+    el.notice.textContent = '';
+    el.notice.hidden = true;
+  }
+
+  function errorMessage(err) {
+    var code = (err && err.code) || '';
+    if (code === 'auth/popup-blocked') return '팝업이 차단되었습니다. 이 사이트의 팝업을 허용한 뒤 다시 눌러 주세요.';
+    if (code === 'auth/unauthorized-domain') return '이 주소(' + location.hostname + ')가 Firebase 승인된 도메인에 없습니다. Firebase 콘솔 > Authentication > 설정 > 승인된 도메인에 추가해 주세요.';
+    if (code === 'auth/operation-not-allowed') return 'Firebase 콘솔 > Authentication에서 Google 로그인이 아직 사용 설정되지 않았습니다.';
+    if (code === 'auth/network-request-failed') return '네트워크 연결을 확인해 주세요.';
+    if (code === 'permission-denied') return '데이터 접근 권한이 없습니다. Firebase 콘솔의 Firestore 보안 규칙을 확인해 주세요.';
+    if (code === 'unavailable') return '서버에 연결할 수 없습니다. 연결이 돌아오면 자동으로 저장됩니다.';
+    return '문제가 발생했습니다.' + (code ? ' (' + code + ')' : '');
+  }
+
+  function reportError(err) {
+    console.error(err);
+    showNotice(errorMessage(err));
+  }
+
+  // ---- 화면 전환: loading / login / app / error ----
+  function showView(name) {
+    el.loadingNote.hidden = name !== 'loading';
+    el.loginView.hidden = name !== 'login';
+    el.appView.hidden = name !== 'app';
+    el.userBox.hidden = !state.user;
+  }
+
+  // ---- 예전 localStorage 데이터 이전 ----
+  function readLegacyTodos() {
     try {
-      raw = localStorage.getItem(STORAGE_KEY);
-    } catch (e) {
-      state.todos = [];
-      return;
-    }
-    if (!raw) {
-      state.todos = [];
-      return;
-    }
-    try {
+      var raw = localStorage.getItem(LEGACY_KEY);
+      if (!raw) return [];
       var parsed = JSON.parse(raw);
-      state.todos = Array.isArray(parsed) ? parsed : [];
+      if (!Array.isArray(parsed)) return [];
+      return parsed.filter(function (t) {
+        return t && typeof t.id === 'string' && t.id && typeof t.text === 'string' && t.text.trim();
+      });
     } catch (e) {
-      try {
-        localStorage.setItem(BACKUP_KEY, raw);
-      } catch (e2) { /* ignore backup failure */ }
-      state.todos = [];
+      return [];
     }
   }
 
-  function save() {
+  function maybeMigrateLegacy(snap) {
+    if (migrationChecked) return;
+    // 서버에서 받은 결과가 아니면(오프라인 캐시) 아직 판단하지 않는다.
+    if (snap.metadata.fromCache) return;
+    migrationChecked = true;
+
+    var flagKey = MIGRATED_KEY_PREFIX + state.user.uid;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.todos));
-    } catch (e) { /* storage full or unavailable: ignore */ }
+      if (localStorage.getItem(flagKey)) return;
+    } catch (e) { return; }
+
+    var legacy = readLegacyTodos();
+    if (legacy.length === 0) return;
+
+    // 목록을 먼저 그린 뒤에 물어본다.
+    setTimeout(function () {
+      var ok = window.confirm('이 브라우저에 저장되어 있던 할 일 ' + legacy.length + '개를 내 계정으로 옮길까요?');
+      try { localStorage.setItem(flagKey, '1'); } catch (e) { /* ignore */ }
+      if (!ok || !state.user) return;
+
+      var CHUNK = 400;
+      for (var i = 0; i < legacy.length; i += CHUNK) {
+        var batch = writeBatch(db);
+        legacy.slice(i, i + CHUNK).forEach(function (t) {
+          var n = normalizeTodo(t.id, t);
+          batch.set(todoRef(n.id), { text: n.text, category: n.category, done: n.done, createdAt: n.createdAt });
+        });
+        batch.commit().catch(reportError);
+      }
+    }, 0);
   }
 
-  // ---- 상태 변경 함수 ----
+  // ---- 상태 변경 함수 (Firestore에 쓰면 onSnapshot이 화면을 갱신한다) ----
   function addTodo(text, category) {
     var trimmed = (text || '').trim();
-    if (!trimmed) return false;
+    if (!trimmed || !state.user) return false;
     var cat = CATEGORY_MAP[category] ? category : 'work';
-    state.todos.push({
-      id: Date.now().toString(),
+    var id = Date.now().toString();
+    setDoc(todoRef(id), {
       text: trimmed,
       category: cat,
       done: false,
       createdAt: new Date().toISOString()
-    });
-    save();
-    render();
+    }).catch(reportError);
     return true;
   }
 
   function updateTodo(id, text, category) {
     var trimmed = (text || '').trim();
-    if (!trimmed) return false;
+    if (!trimmed || !state.user) return false;
     var todo = state.todos.find(function (t) { return t.id === id; });
     if (!todo) return false;
-    todo.text = trimmed;
-    todo.category = CATEGORY_MAP[category] ? category : todo.category;
-    save();
-    render();
+    var cat = CATEGORY_MAP[category] ? category : todo.category;
+    updateDoc(todoRef(id), { text: trimmed, category: cat }).catch(reportError);
     return true;
   }
 
   function deleteTodo(id) {
     var todo = state.todos.find(function (t) { return t.id === id; });
-    if (!todo) return;
+    if (!todo || !state.user) return;
     if (!window.confirm('"' + todo.text + '" 항목을 삭제할까요?')) return;
-    state.todos = state.todos.filter(function (t) { return t.id !== id; });
-    save();
-    render();
+    deleteDoc(todoRef(id)).catch(reportError);
   }
 
   function toggleTodo(id) {
     var todo = state.todos.find(function (t) { return t.id === id; });
-    if (!todo) return;
-    todo.done = !todo.done;
-    save();
-    render();
+    if (!todo || !state.user) return;
+    updateDoc(todoRef(id), { done: !todo.done }).catch(reportError);
   }
 
   function clearCompleted() {
-    var completedCount = state.todos.filter(function (t) { return t.done; }).length;
-    if (completedCount === 0) return;
-    if (!window.confirm('완료된 항목 ' + completedCount + '개를 모두 삭제할까요?')) return;
-    state.todos = state.todos.filter(function (t) { return !t.done; });
-    save();
-    render();
+    if (!state.user) return;
+    var completed = state.todos.filter(function (t) { return t.done; });
+    if (completed.length === 0) return;
+    if (!window.confirm('완료된 항목 ' + completed.length + '개를 모두 삭제할까요?')) return;
+    var CHUNK = 400;
+    for (var i = 0; i < completed.length; i += CHUNK) {
+      var batch = writeBatch(db);
+      completed.slice(i, i + CHUNK).forEach(function (t) { batch.delete(todoRef(t.id)); });
+      batch.commit().catch(reportError);
+    }
   }
 
   // ---- 유틸 ----
@@ -492,6 +680,14 @@
     el.todayToggleBtn = document.getElementById('today-toggle-btn');
     el.clearCompletedBtn = document.getElementById('clear-completed-btn');
     el.list = document.getElementById('todo-list');
+    el.notice = document.getElementById('notice');
+    el.loadingNote = document.getElementById('loading-note');
+    el.loginView = document.getElementById('login-view');
+    el.loginBtn = document.getElementById('login-btn');
+    el.appView = document.getElementById('app-view');
+    el.userBox = document.getElementById('user-box');
+    el.userEmail = document.getElementById('user-email');
+    el.logoutBtn = document.getElementById('logout-btn');
   }
 
   function renderOverallProgress() {
@@ -765,14 +961,97 @@
     el.clearCompletedBtn.addEventListener('click', clearCompleted);
   }
 
-  function init() {
-    cacheEls();
-    load();
-    bindEvents();
-    render();
+  // ---- 로그인 / 데이터 구독 ----
+  function startListening(user) {
+    state.user = user;
+    el.userEmail.textContent = user.email || user.displayName || '';
+    firstSnapshot = true;
+    migrationChecked = false;
+    showView('loading');
+
+    unsubscribe = onSnapshot(todosCol(), { includeMetadataChanges: true }, function (snap) {
+      var wasFirst = firstSnapshot;
+      var changed = snap.docChanges().length > 0;
+      if (changed || wasFirst) {
+        state.todos = snap.docs.map(function (d) { return normalizeTodo(d.id, d.data()); });
+        // 수정 중이던 항목이 다른 기기에서 삭제되면 수정 모드를 끝낸다.
+        if (state.editingId && !state.todos.some(function (t) { return t.id === state.editingId; })) {
+          state.editingId = null;
+        }
+      }
+      if (wasFirst) {
+        firstSnapshot = false;
+        clearNotice();
+        showView('app');
+      }
+      if (changed || wasFirst) render();
+      maybeMigrateLegacy(snap);
+    }, function (err) {
+      reportError(err);
+      showView('error');
+    });
   }
 
-  document.addEventListener('DOMContentLoaded', init);
+  function stopListening() {
+    if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+    state.user = null;
+    state.todos = [];
+    state.editingId = null;
+  }
+
+  function bindAuthEvents() {
+    el.loginBtn.addEventListener('click', function () {
+      clearNotice();
+      el.loginBtn.disabled = true;
+      signInWithPopup(auth, new GoogleAuthProvider())
+        .catch(function (err) {
+          var code = (err && err.code) || '';
+          if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return;
+          reportError(err);
+        })
+        .then(function () { el.loginBtn.disabled = false; });
+    });
+
+    el.logoutBtn.addEventListener('click', function () {
+      signOut(auth).catch(reportError);
+    });
+  }
+
+  function init() {
+    window.__todoAppStarted = true;
+    cacheEls();
+    bindEvents();
+    bindAuthEvents();
+    render();
+
+    try {
+      var app = initializeApp(firebaseConfig);
+      auth = getAuth(app);
+      db = initializeFirestore(app, {
+        localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+      });
+    } catch (err) {
+      reportError(err);
+      showView('error');
+      return;
+    }
+
+    showView('loading');
+    onAuthStateChanged(auth, function (user) {
+      stopListening();
+      if (user) {
+        startListening(user);
+      } else {
+        showView('login');
+      }
+    }, reportError);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 })();
 </script>
 </body>
